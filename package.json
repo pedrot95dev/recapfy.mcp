@@ -1,0 +1,37 @@
+{
+  "name": "@recapfy/mcp",
+  "version": "0.1.0",
+  "description": "MCP server that exposes the Recapfy x402 \"ask\" endpoint as a tool. Each user runs it locally with their own Solana wallet and pays 0.01 USDC per call.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "recapfy-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    ".env.example"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@scure/base": "^2.2.0",
+    "@solana/kit": "^6.10.0",
+    "@x402/core": "^2.16.0",
+    "@x402/fetch": "^2.16.0",
+    "@x402/svm": "^2.16.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
