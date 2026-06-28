@@ -118,9 +118,3 @@ The agent-discovery goal (see the API repo's X402 strategy doc, Tier 1 #1):
 | `400 ... prompt`                                   | `prompt` is required and non-empty.                                                |
 | 402 loop / "Failed to create payment payload"      | Wallet has no USDC on mainnet, or wrong network. Fund it.                           |
 | TLS error against a local API over https           | Set `RECAPFY_ALLOW_INSECURE_TLS=1` (localhost dev only).                            |
-
-## Notes for the API side (not this repo)
-
-- The 402 body error string still says *"The X-PAYMENT header is required"* — stale;
-  the real v2 retry header is `PAYMENT-SIGNATURE`. Cosmetic but misleading.
-- `.well-known/x402` manifest and `resource` URLs are `http://`, not `https://`.
