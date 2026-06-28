@@ -69,7 +69,7 @@ Add to your MCP config (`claude_desktop_config.json`):
 }
 ```
 
-Once published to npm this becomes `"command": "npx", "args": ["-y", "@recapfy/mcp"]`.
+Once published to npm this becomes `"command": "npx", "args": ["-y", "recapfy-mcp"]`.
 
 ## How payment works
 

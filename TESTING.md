@@ -99,9 +99,9 @@ Verify the spend on a Solana explorer against your wallet / the recipient
 
 The agent-discovery goal (see the API repo's X402 strategy doc, Tier 1 #1):
 
-1. `npm publish --access public` (package is `@recapfy/mcp`). Then users launch it
-   with `npx -y @recapfy/mcp` instead of a local path — update the config snippet
-   accordingly.
+1. Publish to npm (package is `recapfy-mcp`) — see [RELEASING.md](./RELEASING.md).
+   Then users launch it with `npx -y recapfy-mcp` instead of a local path —
+   update the config snippet accordingly.
 2. List it on MCP registries: official MCP registry, Smithery, mcp.so, PulseMCP,
    Glama.
 3. Register the endpoint in the x402 ecosystem (Bazaar / awesome-x402).
