@@ -20,17 +20,18 @@ and it hides the whole x402 dance (402 → sign → retry) behind a single tool 
 
 ### `ask`
 
-| Input      | Type   | Required | Description                                   |
-| ---------- | ------ | -------- | --------------------------------------------- |
-| `videoUrl` | string | yes      | Absolute http(s) URL of the YouTube video.    |
-| `prompt`   | string | yes      | What to ask (a question, or "summarize").     |
-
-> The API currently **requires** a prompt. The longer-term plan is to allow
-> omitting it for a standard summary; this tool will relax the rule once the API
-> does.
+| Input             | Type    | Required | Description                                                              |
+| ----------------- | ------- | -------- | ------------------------------------------------------------------------ |
+| `videoUrl`        | string  | yes      | Absolute http(s) URL of the YouTube video.                               |
+| `prompt`          | string  | yes      | What to ask (a question, or "summarize").                                |
+| `maxOutputTokens` | integer | no       | Max tokens in the answer (defaults to 1024). **Drives the dynamic price.** |
 
 Returns the agent's answer as text. Payment is settled transparently before the
 answer is returned.
+
+> The per-call price is **dynamic**: the API quotes the USDC amount in the 402
+> challenge based on `maxOutputTokens`. The configured wallet pays whatever is
+> quoted, so keep `maxOutputTokens` sensible.
 
 ## Configuration
 
@@ -72,23 +73,31 @@ Once published to npm this becomes `"command": "npx", "args": ["-y", "@recapfy/m
 
 ## How payment works
 
-Built on the official Coinbase x402 client packages
-(`@x402/fetch`, `@x402/svm`, `@x402/core`) plus `@solana/kit` for signing:
+Built on the official Coinbase x402 **v2** client packages
+(`@x402/fetch`, `@x402/svm`, `@x402/core`) plus `@solana/kit` for signing. The
+deployed API is a proper x402 v2 server, so the off-the-shelf client is wire
+compatible — confirmed against the live endpoint and `.well-known/x402` manifest:
 
 1. The tool POSTs to `${RECAPFY_API_BASE_URL}/api/v1/agents/ask`.
-2. The API replies `402` with the payment requirements (`exact` SVM scheme,
-   USDC, and a facilitator `feePayer` that sponsors the network fee).
+2. The API replies `402` with the requirements in the **`PAYMENT-REQUIRED`**
+   header (`exact` SVM scheme, USDC, dynamic `amount`, and a facilitator
+   `feePayer` that sponsors the network fee).
 3. The wrapped fetch builds and signs a gasless SPL-token transfer with your
-   wallet and retries with the `X-PAYMENT` header.
-4. The API verifies, settles, and returns the answer.
+   wallet and retries with the **`PAYMENT-SIGNATURE`** header (x402 v2).
+4. The API verifies, settles, and returns the answer plus a **`PAYMENT-RESPONSE`**
+   settlement header.
 
-## Status / to verify against a live API
+Verified against the live API (`api.recapfy.ai`):
 
-- ✅ MCP server boots over stdio and advertises the `ask` tool.
-- ⏳ A real paid call needs a funded wallet on the advertised network and a
-  reachable API. Not yet exercised end-to-end here.
-- ⚠️ **Wire-format check:** the API serializes the 402 challenge's amount field
-  as `amount`; canonical x402 v2 often uses `maxAmountRequired`. If the official
-  client's parser disagrees with what the API emits, the auto-payment won't
-  trigger. Confirm the field names line up (and fix on whichever side is wrong)
-  during the first live test.
+- `x402Version: 2`, network `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` (mainnet),
+  asset USDC, amount `dynamic` (quoted per request from `maxOutputTokens`).
+- Field name is `amount` — correct for x402 **v2** (v1 used `maxAmountRequired`);
+  `@x402/core` parses both, keyed off `x402Version`.
+
+## Status
+
+- ✅ MCP server boots over stdio and advertises the `ask` tool (with
+  `maxOutputTokens`).
+- ✅ Wire format verified compatible with the live x402 v2 endpoint.
+- ⏳ A real *paid* call still needs a funded mainnet USDC wallet; not yet
+  exercised end-to-end from here.

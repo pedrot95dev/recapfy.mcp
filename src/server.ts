@@ -21,13 +21,22 @@ const inputSchema = {
     .string()
     .url()
     .describe("Absolute http(s) URL of the YouTube video to ask about."),
-  // The API validator currently requires a non-empty prompt. The long-term
-  // plan is to allow omitting it for a standard summary; until the API relaxes
-  // that rule we require it here to avoid a guaranteed 400.
+  // The API requires a non-empty prompt (confirmed against the live endpoint:
+  // omitting it returns 400, despite the docs hinting it is optional).
   prompt: z
     .string()
     .min(1)
     .describe("What to ask about the video (e.g. a question or 'summarize')."),
+  // Required in practice: the API rejects requests where this is missing/<=0,
+  // and the price is dynamic in this value (more tokens = higher USDC cost).
+  maxOutputTokens: z
+    .number()
+    .int()
+    .positive()
+    .default(1024)
+    .describe(
+      "Maximum tokens in the answer. Drives the per-call price (more tokens cost more USDC).",
+    ),
 };
 
 export function buildServer(config: RecapfyConfig, payingFetch: FetchLike): McpServer {
@@ -46,7 +55,7 @@ export function buildServer(config: RecapfyConfig, payingFetch: FetchLike): McpS
         "configured wallet via the x402 protocol.",
       inputSchema,
     },
-    async ({ videoUrl, prompt }) => {
+    async ({ videoUrl, prompt, maxOutputTokens }) => {
       const url = `${config.apiBaseUrl}${ASK_PATH}`;
 
       let response: Response;
@@ -54,7 +63,7 @@ export function buildServer(config: RecapfyConfig, payingFetch: FetchLike): McpS
         response = await payingFetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ videoUrl, prompt }),
+          body: JSON.stringify({ videoUrl, prompt, maxOutputTokens }),
         });
       } catch (err) {
         return toError(
@@ -77,7 +86,11 @@ export function buildServer(config: RecapfyConfig, payingFetch: FetchLike): McpS
         return toError(`Could not parse API response as JSON: ${describe(err)}`);
       }
 
-      const settlement = response.headers.get("x-payment-response");
+      // x402 v2 settlement header is PAYMENT-RESPONSE; X-PAYMENT-RESPONSE is the
+      // v1 name kept as a fallback.
+      const settlement =
+        response.headers.get("payment-response") ??
+        response.headers.get("x-payment-response");
 
       return {
         content: [{ type: "text", text: data.answer }],
