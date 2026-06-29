@@ -1,0 +1,43 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.pedrot95dev/recapfy",
+  "description": "Ask anything about a YouTube video (or summarize it). Paid per call in USDC on Solana via x402.",
+  "repository": {
+    "url": "https://github.com/pedrot95dev/recapfy.mcp",
+    "source": "github"
+  },
+  "version": "0.1.5",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "recapfy-mcp",
+      "version": "0.1.5",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "SVM_PRIVATE_KEY",
+          "description": "Base58-encoded Solana secret key. Pays per call (dynamic USDC price). Keep it funded; use a dedicated low-balance wallet.",
+          "isRequired": true,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "RECAPFY_API_BASE_URL",
+          "description": "Override the API base URL (defaults to https://api.recapfy.ai). For local dev only.",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        },
+        {
+          "name": "RECAPFY_ALLOW_INSECURE_TLS",
+          "description": "Set to 1 to accept self-signed TLS (localhost dev over https only).",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
