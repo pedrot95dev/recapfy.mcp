@@ -37,9 +37,14 @@ MCP Registry (GitHub OIDC), and creates the git tag + GitHub Release. No tokens.
 | Commit type                         | Release           |
 | ----------------------------------- | ----------------- |
 | `fix: …`                            | patch (0.1.6 → 0.1.7) |
+| `docs: …`                           | patch — refreshes the npm + MCP Registry pages |
 | `feat: …`                           | minor (0.1.6 → 0.2.0) |
 | `feat!: …` / `BREAKING CHANGE:`     | major (0.1.6 → 1.0.0) |
-| `docs:`, `chore:`, `refactor:`, …   | no release        |
+| `chore:`, `refactor:`, …            | no release        |
+
+`docs:` is mapped to a patch via a `releaseRules` override in
+[`.releaserc.json`](./.releaserc.json) — without it, README/manifest changes
+would never reach npm or the MCP Registry, which only re-render on publish.
 
 The version bump is **not** committed back to `main`; semantic-release reads the
 last `v*` tag to compute the next version, so commit `package.json`'s `version`

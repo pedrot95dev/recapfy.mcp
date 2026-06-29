@@ -1,8 +1,8 @@
 # Recapfy MCP
 
 An [MCP](https://modelcontextprotocol.io) server that exposes Recapfy's paid
-endpoints as tools — ask anything about a YouTube video (or get a summary) and
-fetch a video's full transcript — straight from an MCP-capable agent like Claude
+endpoints as tools — ask anything about a YouTube video and fetch a video's full
+transcript — straight from an MCP-capable agent like Claude
 Desktop, Cursor, or Cline.
 It runs locally — there's no hosted Recapfy MCP endpoint; you launch your own copy.
 
@@ -82,7 +82,7 @@ then restart the client again.
 | Input             | Type    | Required | Description                                                                 |
 | ----------------- | ------- | -------- | --------------------------------------------------------------------------- |
 | `videoUrl`        | string  | yes      | Absolute http(s) URL of the YouTube video.                                  |
-| `prompt`          | string  | yes      | What to ask (a question, or "summarize").                                   |
+| `prompt`          | string  | yes      | What to ask about the video.                                                |
 | `maxOutputTokens` | integer | no       | Max tokens in the answer (default 1024). **Drives the dynamic price.**       |
 
 Returns the agent's answer as text. Payment is settled before the answer returns.

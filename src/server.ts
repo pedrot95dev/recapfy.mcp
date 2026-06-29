@@ -42,7 +42,7 @@ const askInputSchema = {
   prompt: z
     .string()
     .min(1)
-    .describe("What to ask about the video (e.g. a question or 'summarize')."),
+    .describe("What to ask about the video."),
   // Required in practice: the API rejects requests where this is missing/<=0,
   // and the price is dynamic in this value (more tokens = higher USDC cost).
   maxOutputTokens: z
@@ -73,7 +73,7 @@ export function buildServer(config: RecapfyConfig, payingFetch: FetchLike): McpS
     {
       title: "Ask about a YouTube video",
       description:
-        "Ask anything about a YouTube video (or request a summary). This is a paid " +
+        "Ask anything about a YouTube video. This is a paid " +
         "tool: each call costs a dynamic amount of USDC on Solana (scales with " +
         "maxOutputTokens), paid automatically from the configured wallet via the x402 protocol.",
       inputSchema: askInputSchema,

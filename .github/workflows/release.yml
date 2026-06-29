@@ -5,11 +5,14 @@ name: Release
 # AND the official MCP Registry — no manual version bump or GitHub Release needed.
 #
 #   fix:                     -> patch   (0.1.6 -> 0.1.7)
+#   docs:                    -> patch   (refreshes the npm + MCP Registry pages)
 #   feat:                    -> minor   (0.1.6 -> 0.2.0)
 #   feat! / BREAKING CHANGE: -> major   (0.1.6 -> 1.0.0)
 #
-# Commits that aren't fix/feat/breaking (docs:, chore:, refactor:, plain
-# messages, ...) do NOT cut a release. semantic-release reads the last git tag
+# docs: cuts a patch (via a releaseRules override in .releaserc.json) so README
+# and server.json changes actually reach the registries, which only re-render on
+# publish. Other types (chore:, refactor:, plain messages, ...) do NOT cut a
+# release. semantic-release reads the last git tag
 # (v0.1.6, ...) to decide the next version, so the bump is never committed back
 # to main — only a new tag + GitHub Release are created (no push loop, no PAT).
 #
