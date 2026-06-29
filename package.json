@@ -1,6 +1,6 @@
 {
   "name": "recapfy-mcp",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "mcpName": "io.github.pedrot95dev/recapfy",
   "description": "MCP server that exposes Recapfy's x402 endpoints (ask about a YouTube video, get its transcript) as tools. Each user runs it locally with their own Solana wallet and pays per call.",
   "license": "MIT",
