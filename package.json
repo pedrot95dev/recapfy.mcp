@@ -1,6 +1,6 @@
 {
   "name": "recapfy-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server that exposes the Recapfy x402 \"ask\" endpoint as a tool. Each user runs it locally with their own Solana wallet and pays per call.",
   "license": "MIT",
   "type": "module",
