@@ -1,8 +1,9 @@
 # Recapfy MCP
 
 An [MCP](https://modelcontextprotocol.io) server that exposes Recapfy's paid
-`ask` endpoint as a tool — ask anything about a YouTube video (or get a summary)
-straight from an MCP-capable agent like Claude Desktop, Cursor, or Cline.
+endpoints as tools — ask anything about a YouTube video (or get a summary) and
+fetch a video's full transcript — straight from an MCP-capable agent like Claude
+Desktop, Cursor, or Cline.
 It runs locally — there's no hosted Recapfy MCP endpoint; you launch your own copy.
 
 Each call is paid in **USDC on Solana** (dynamic price, scales with
@@ -62,12 +63,25 @@ The per-call price is **dynamic**: the API quotes the USDC amount in the `402`
 challenge based on `maxOutputTokens`, and your wallet pays whatever is quoted — so
 keep `maxOutputTokens` sensible.
 
+## Tool: `get_transcript`
+
+| Input      | Type   | Required | Description                                |
+| ---------- | ------ | -------- | ------------------------------------------ |
+| `videoUrl` | string | yes      | Absolute http(s) URL of the YouTube video. |
+
+Returns the video's full transcript as timestamped segments, plus its `title`,
+`channelName`, and `durationSeconds`. The text content is a readable, timestamped
+transcript; the structured content carries the raw `transcript` array (each
+segment is `{ timestampInSeconds, text }`). The per-call price is **flat** USDC,
+quoted in the `402` challenge and paid automatically.
+
 ## How payment works
 
 Built on the official Coinbase x402 **v2** client packages (`@x402/fetch`,
 `@x402/svm`, `@x402/core`) plus `@solana/kit` for signing:
 
-1. The tool POSTs to `${RECAPFY_API_BASE_URL}/api/v1/agents/ask`.
+1. The tool POSTs to the matching endpoint under `${RECAPFY_API_BASE_URL}`
+   (`/api/v1/agents/ask` or `/api/v1/agents/get-transcript`).
 2. The API replies `402` with requirements in the `PAYMENT-REQUIRED` header
    (`exact` SVM scheme, USDC, dynamic amount, and a facilitator `feePayer` that
    sponsors the network fee).
@@ -78,15 +92,15 @@ Built on the official Coinbase x402 **v2** client packages (`@x402/fetch`,
 
 ## Verify it works
 
-Inspect the tool without spending anything using the MCP Inspector (it only signs
-a payment when you actually invoke `ask`, so any key is fine just to browse):
+Inspect the tools without spending anything using the MCP Inspector (it only signs
+a payment when you actually invoke a tool, so any key is fine just to browse):
 
 ```bash
 SVM_PRIVATE_KEY=<key> npx @modelcontextprotocol/inspector npx -y recapfy-mcp
 ```
 
-Open the printed URL → **Tools → ask**. Invoking it with a funded wallet performs
-a real paid call; verify the spend on a Solana explorer.
+Open the printed URL → **Tools → ask / get_transcript**. Invoking a tool with a
+funded wallet performs a real paid call; verify the spend on a Solana explorer.
 
 ## Troubleshooting
 
