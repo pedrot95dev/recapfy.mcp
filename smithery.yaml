@@ -25,7 +25,7 @@ startCommand:
   commandFunction: |
     (config) => ({
       command: 'npx',
-      args: ['-y', 'recapfy-mcp'],
+      args: ['-y', 'recapfy-mcp@latest'],
       env: {
         SVM_PRIVATE_KEY: config.svmPrivateKey,
         ...(config.recapfyApiBaseUrl ? { RECAPFY_API_BASE_URL: config.recapfyApiBaseUrl } : {})

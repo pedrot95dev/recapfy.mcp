@@ -33,7 +33,7 @@ No clone or build needed. Add this to your MCP client config (Claude Desktop:
   "mcpServers": {
     "recapfy": {
       "command": "npx",
-      "args": ["-y", "recapfy-mcp"],
+      "args": ["-y", "recapfy-mcp@latest"],
       "env": {
         "SVM_PRIVATE_KEY": "<your base58 Solana secret key>"
       }
@@ -41,6 +41,33 @@ No clone or build needed. Add this to your MCP client config (Claude Desktop:
   }
 }
 ```
+
+> **Always use `recapfy-mcp@latest`.** A bare `npx -y recapfy-mcp` reuses
+> whatever is in npx's cache and never re-checks the registry, so you can stay
+> pinned to an old build (and miss new tools) indefinitely. The `@latest` tag
+> forces npx to resolve the newest published version on every launch.
+
+## Updating
+
+New versions (including new tools/endpoints) are picked up automatically **when
+two things happen**, because of two independent caches:
+
+1. **npx package cache** — using `recapfy-mcp@latest` (as above) makes npx fetch
+   the newest published version each launch. Without `@latest`, npx serves the
+   cached copy and you stay on an old build.
+2. **MCP client tool list** — clients read the server's tool list **once per
+   session**. New tools only appear after you **fully restart the MCP client**
+   (Claude Desktop, Cursor, Cline, …) so it relaunches the server and re-reads
+   the tools.
+
+So after a release: keep `@latest` and **restart your client**. If a brand-new
+tool still doesn't show up, force a clean fetch:
+
+```bash
+npx clear-npx-cache    # or: rm -rf "$(npm config get cache)/_npx"
+```
+
+then restart the client again.
 
 ## Configuration
 
@@ -96,7 +123,7 @@ Inspect the tools without spending anything using the MCP Inspector (it only sig
 a payment when you actually invoke a tool, so any key is fine just to browse):
 
 ```bash
-SVM_PRIVATE_KEY=<key> npx @modelcontextprotocol/inspector npx -y recapfy-mcp
+SVM_PRIVATE_KEY=<key> npx @modelcontextprotocol/inspector npx -y recapfy-mcp@latest
 ```
 
 Open the printed URL → **Tools → ask / get_transcript**. Invoking a tool with a
@@ -110,6 +137,7 @@ funded wallet performs a real paid call; verify the spend on a Solana explorer.
 | `SVM_PRIVATE_KEY is not valid base58`            | Needs base58 of the 64-byte secret key.                             |
 | `400 ... maxOutputTokens must be greater than 0` | Pass a positive `maxOutputTokens` (the tool defaults to 1024).      |
 | `400 ... prompt`                                 | `prompt` is required and non-empty.                                 |
+| New tool/endpoint missing after an update        | Pin `recapfy-mcp@latest`, **restart the client**, then clear the npx cache (see [Updating](#updating)). |
 | 402 loop / "Failed to create payment payload"    | Wallet has no USDC on mainnet, or wrong network. Fund it.           |
 | TLS error against a local API over https         | Set `RECAPFY_ALLOW_INSECURE_TLS=1` (localhost dev only).            |
 
