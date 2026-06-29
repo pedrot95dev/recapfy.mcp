@@ -1,15 +1,25 @@
 name: Release
 
-# Publishes the package to npm AND the official MCP Registry whenever you
-# publish a GitHub Release.
+# Fully automated releases. Every push to main is analyzed with Conventional
+# Commits; if it warrants a release, the version is bumped and published to npm
+# AND the official MCP Registry — no manual version bump or GitHub Release needed.
 #
-# npm: uses npm Trusted Publishing (OIDC): no NPM_TOKEN secret is needed, and
-# npm automatically attaches provenance attestations linking the package to this
-# repo + workflow + commit.
+#   fix:                     -> patch   (0.1.6 -> 0.1.7)
+#   feat:                    -> minor   (0.1.6 -> 0.2.0)
+#   feat! / BREAKING CHANGE: -> major   (0.1.6 -> 1.0.0)
 #
-# MCP Registry: uses GitHub OIDC (the `id-token: write` permission below) via
-# `mcp-publisher login github-oidc` — no secret needed. The repo owner
-# (pedrot95dev) authorizes the `io.github.pedrot95dev/*` namespace.
+# Commits that aren't fix/feat/breaking (docs:, chore:, refactor:, plain
+# messages, ...) do NOT cut a release. semantic-release reads the last git tag
+# (v0.1.6, ...) to decide the next version, so the bump is never committed back
+# to main — only a new tag + GitHub Release are created (no push loop, no PAT).
+#
+# No secrets are used:
+#   - npm   : Trusted Publishing (OIDC) via `id-token: write` + provenance.
+#   - MCP   : GitHub OIDC via `mcp-publisher login github-oidc`.
+#   - GitHub: the built-in GITHUB_TOKEN tags + creates the Release.
+#
+# IMPORTANT: npm's Trusted Publisher is bound to this workflow's *filename*
+# (release.yml) and the `npm` environment below. Keep both if you refactor.
 #
 # ONE-TIME SETUP (already done for recapfy-mcp):
 #   - On the npm package's settings page, add a Trusted Publisher pointing at
@@ -17,19 +27,26 @@ name: Release
 #   - Create a GitHub Environment named `npm`.
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
 
 permissions:
-  contents: read
-  id-token: write # required for OIDC trusted publishing + provenance
+  contents: write # create the git tag + GitHub Release
+  id-token: write # OIDC trusted publishing (npm + MCP) + provenance
+
+# Don't let overlapping pushes publish concurrently.
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     environment: npm
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # semantic-release needs full history + tags
 
       - uses: actions/setup-node@v5
         with:
@@ -43,28 +60,15 @@ jobs:
 
       - run: npm run build
 
-      # No token: OIDC + the trusted-publisher config authenticate the publish.
-      # Provenance is generated automatically under trusted publishing.
-      - run: npm publish --access public
-
-      # --- Publish metadata to the official MCP Registry ---
-
       - name: Install mcp-publisher
         run: |
           curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          sudo mv mcp-publisher /usr/local/bin/
 
-      # Stamp server.json's versions from package.json (the version npm just
-      # published) so the registry record always matches the npm package. This
-      # means a release only needs the version bumped in package.json.
-      - name: Sync server.json version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.tmp
-          mv server.tmp server.json
-
-      # GitHub OIDC: reuses the id-token: write permission above. No secret.
-      - name: Authenticate to MCP Registry (OIDC)
-        run: ./mcp-publisher login github-oidc
-
-      - name: Publish to MCP Registry
-        run: ./mcp-publisher publish
+      # semantic-release: analyze commits, bump, publish (npm + MCP via the
+      # exec script), then tag + create the GitHub Release. Installed ephemerally
+      # so it stays out of the package's dependencies.
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx --yes --package semantic-release --package @semantic-release/exec -- semantic-release
