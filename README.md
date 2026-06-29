@@ -4,8 +4,11 @@ An [MCP](https://modelcontextprotocol.io) server that exposes Recapfy's paid
 `ask` endpoint as a tool. Ask anything about a YouTube video (or get a summary)
 straight from an MCP-capable agent — Claude Desktop, Cursor, Cline, etc.
 
-Each call costs **0.01 USDC on Solana**, paid automatically via the
-[x402](https://x402.org) protocol.
+Each call is paid in **USDC on Solana** (dynamic price, scales with
+`maxOutputTokens`), settled automatically via the [x402](https://x402.org)
+protocol.
+
+Published on npm: [`recapfy-mcp`](https://www.npmjs.com/package/recapfy-mcp).
 
 ## Why a local MCP server (and why you bring your own wallet)
 
@@ -50,9 +53,28 @@ npm install
 npm run build
 ```
 
-## Use with Claude Desktop
+## Install (Claude Desktop, Cursor, Cline, …)
 
-Add to your MCP config (`claude_desktop_config.json`):
+No clone or build needed — add this to your MCP config (Claude Desktop:
+`claude_desktop_config.json`) and restart the client:
+
+```jsonc
+{
+  "mcpServers": {
+    "recapfy": {
+      "command": "npx",
+      "args": ["-y", "recapfy-mcp"],
+      "env": {
+        "RECAPFY_API_BASE_URL": "https://api.recapfy.ai",
+        "SVM_PRIVATE_KEY": "<your base58 Solana secret key>"
+      }
+    }
+  }
+}
+```
+
+<details>
+<summary>Run from a local checkout instead (development)</summary>
 
 ```jsonc
 {
@@ -69,7 +91,9 @@ Add to your MCP config (`claude_desktop_config.json`):
 }
 ```
 
-Once published to npm this becomes `"command": "npx", "args": ["-y", "recapfy-mcp"]`.
+Requires `npm install && npm run build` first.
+
+</details>
 
 ## How payment works
 
