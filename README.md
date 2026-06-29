@@ -3,20 +3,13 @@
 An [MCP](https://modelcontextprotocol.io) server that exposes Recapfy's paid
 `ask` endpoint as a tool — ask anything about a YouTube video (or get a summary)
 straight from an MCP-capable agent like Claude Desktop, Cursor, or Cline.
+It runs locally — there's no hosted Recapfy MCP endpoint; you launch your own copy.
 
 Each call is paid in **USDC on Solana** (dynamic price, scales with
 `maxOutputTokens`), settled automatically via the [x402](https://x402.org)
 protocol. You bring your own wallet; you pay only for what you call.
 
 📦 npm: [`recapfy-mcp`](https://www.npmjs.com/package/recapfy-mcp)
-
-## Why a local server, and why you bring your own wallet
-
-"MCP server" is a protocol role, not a hosted service. This runs as a **local
-stdio server**: each user launches their own copy, configured with their **own
-Solana wallet**, so every caller pays with their own funds. That's the only model
-that makes per-agent payment work — a single shared server can't hold everyone's
-wallet. It hides the whole x402 dance (`402 → sign → retry`) behind one tool call.
 
 ## Prerequisites
 
