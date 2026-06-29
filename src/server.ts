@@ -51,8 +51,8 @@ export function buildServer(config: RecapfyConfig, payingFetch: FetchLike): McpS
       title: "Ask about a YouTube video",
       description:
         "Ask anything about a YouTube video (or request a summary). This is a paid " +
-        "tool: each call costs 0.01 USDC on Solana, paid automatically from the " +
-        "configured wallet via the x402 protocol.",
+        "tool: each call costs a dynamic amount of USDC on Solana (scales with " +
+        "maxOutputTokens), paid automatically from the configured wallet via the x402 protocol.",
       inputSchema,
     },
     async ({ videoUrl, prompt, maxOutputTokens }) => {

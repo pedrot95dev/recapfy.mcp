@@ -5,6 +5,12 @@
  * that user's own Solana wallet — so every caller pays with their own funds.
  */
 
+/**
+ * Production Recapfy API. Hardcoded so users don't have to configure it; it can
+ * still be overridden via RECAPFY_API_BASE_URL for local API development.
+ */
+const DEFAULT_API_BASE_URL = "https://api.recapfy.ai";
+
 export interface RecapfyConfig {
   /** Base URL of the Recapfy API, no trailing slash. */
   apiBaseUrl: string;
@@ -27,7 +33,11 @@ function required(name: string): string {
 }
 
 export function loadConfig(): RecapfyConfig {
-  const apiBaseUrl = required("RECAPFY_API_BASE_URL").replace(/\/+$/, "");
+  // Defaults to production; override only for local API development.
+  const apiBaseUrl = (process.env.RECAPFY_API_BASE_URL?.trim() || DEFAULT_API_BASE_URL).replace(
+    /\/+$/,
+    "",
+  );
   const svmPrivateKey = required("SVM_PRIVATE_KEY");
   const allowInsecureTls = process.env.RECAPFY_ALLOW_INSECURE_TLS?.trim() === "1";
 

@@ -41,7 +41,6 @@ No clone or build needed. Add this to your MCP client config (Claude Desktop:
       "command": "npx",
       "args": ["-y", "recapfy-mcp"],
       "env": {
-        "RECAPFY_API_BASE_URL": "https://api.recapfy.ai",
         "SVM_PRIVATE_KEY": "<your base58 Solana secret key>"
       }
     }
@@ -51,11 +50,11 @@ No clone or build needed. Add this to your MCP client config (Claude Desktop:
 
 ## Configuration
 
-| Variable                     | Required | Description                                                       |
-| ---------------------------- | -------- | ----------------------------------------------------------------- |
-| `RECAPFY_API_BASE_URL`       | yes      | Base URL of the Recapfy API, no trailing slash.                   |
-| `SVM_PRIVATE_KEY`            | yes      | Base58-encoded Solana secret key. Pays per call. Keep it funded.  |
-| `RECAPFY_ALLOW_INSECURE_TLS` | no       | Set to `1` to accept self-signed TLS (local dev over https only). |
+| Variable                     | Required | Description                                                                          |
+| ---------------------------- | -------- | ----------------------------------------------------------------------------------- |
+| `SVM_PRIVATE_KEY`            | yes      | Base58-encoded Solana secret key. Pays per call. Keep it funded.                    |
+| `RECAPFY_API_BASE_URL`       | no       | Override the API base URL (defaults to `https://api.recapfy.ai`). For local dev.    |
+| `RECAPFY_ALLOW_INSECURE_TLS` | no       | Set to `1` to accept self-signed TLS (local dev over https only).                   |
 
 ## Tool: `ask`
 
@@ -90,8 +89,7 @@ Inspect the tool without spending anything using the MCP Inspector (it only sign
 a payment when you actually invoke `ask`, so any key is fine just to browse):
 
 ```bash
-RECAPFY_API_BASE_URL=https://api.recapfy.ai SVM_PRIVATE_KEY=<key> \
-  npx @modelcontextprotocol/inspector npx -y recapfy-mcp
+SVM_PRIVATE_KEY=<key> npx @modelcontextprotocol/inspector npx -y recapfy-mcp
 ```
 
 Open the printed URL → **Tools → ask**. Invoking it with a funded wallet performs
@@ -101,7 +99,7 @@ a real paid call; verify the spend on a Solana explorer.
 
 | Symptom                                          | Cause / fix                                                          |
 | ------------------------------------------------ | ------------------------------------------------------------------- |
-| `Missing required environment variable ...`      | `RECAPFY_API_BASE_URL` or `SVM_PRIVATE_KEY` not set.                |
+| `Missing required environment variable ...`      | `SVM_PRIVATE_KEY` not set.                                          |
 | `SVM_PRIVATE_KEY is not valid base58`            | Needs base58 of the 64-byte secret key.                             |
 | `400 ... maxOutputTokens must be greater than 0` | Pass a positive `maxOutputTokens` (the tool defaults to 1024).      |
 | `400 ... prompt`                                 | `prompt` is required and non-empty.                                 |
@@ -126,7 +124,6 @@ Run a local checkout from your MCP client by pointing at the build:
       "command": "node",
       "args": ["/absolute/path/to/recapfy.mcp/dist/index.js"],
       "env": {
-        "RECAPFY_API_BASE_URL": "https://api.recapfy.ai",
         "SVM_PRIVATE_KEY": "<your base58 Solana secret key>"
       }
     }
