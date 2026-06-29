@@ -46,6 +46,11 @@ MCP Registry (GitHub OIDC), and creates the git tag + GitHub Release. No tokens.
 [`.releaserc.json`](./.releaserc.json) — without it, README/manifest changes
 would never reach npm or the MCP Registry, which only re-render on publish.
 
+> The `description` in [`server.json`](./server.json) must be **≤ 100
+> characters** — the MCP Registry rejects the publish (HTTP 422) otherwise, and
+> since npm publishes first that leaves npm and the registry on different
+> versions. Keep it short.
+
 The version bump is **not** committed back to `main`; semantic-release reads the
 last `v*` tag to compute the next version, so commit `package.json`'s `version`
 field as-is and let the pipeline own it.
