@@ -1,0 +1,33 @@
+# Smithery configuration for the locally-run recapfy-mcp server.
+# https://smithery.ai/docs/config
+#
+# This is a local (stdio) server distributed via npm — Smithery launches it on
+# the user's machine with `npx`, injecting their config as environment vars.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required:
+      - svmPrivateKey
+    properties:
+      svmPrivateKey:
+        type: string
+        title: Solana secret key (base58)
+        description: >-
+          Base58-encoded Solana secret key. Pays per call (dynamic USDC price).
+          Use a dedicated, low-balance wallet funded with USDC on mainnet.
+      recapfyApiBaseUrl:
+        type: string
+        title: API base URL (optional)
+        description: >-
+          Override the API base URL (defaults to https://api.recapfy.ai).
+          For local API development only.
+  commandFunction: |
+    (config) => ({
+      command: 'npx',
+      args: ['-y', 'recapfy-mcp'],
+      env: {
+        SVM_PRIVATE_KEY: config.svmPrivateKey,
+        ...(config.recapfyApiBaseUrl ? { RECAPFY_API_BASE_URL: config.recapfyApiBaseUrl } : {})
+      }
+    })
