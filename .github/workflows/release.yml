@@ -5,10 +5,10 @@ name: Release
 # automatically attaches provenance attestations linking the package to this
 # repo + workflow + commit.
 #
-# ONE-TIME SETUP before this works (see RELEASING.md):
-#   1. Create an npmjs.com account and do the first `npm publish` manually.
-#   2. On the package's npm settings page, add a Trusted Publisher pointing at
-#      this repo, workflow file `release.yml`, and environment `npm`.
+# ONE-TIME SETUP (already done for recapfy-mcp):
+#   - On the npm package's settings page, add a Trusted Publisher pointing at
+#     this repo, workflow file `release.yml`, and environment `npm`.
+#   - Create a GitHub Environment named `npm`.
 
 on:
   release:

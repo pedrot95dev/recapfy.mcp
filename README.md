@@ -1,61 +1,37 @@
 # Recapfy MCP
 
 An [MCP](https://modelcontextprotocol.io) server that exposes Recapfy's paid
-`ask` endpoint as a tool. Ask anything about a YouTube video (or get a summary)
-straight from an MCP-capable agent — Claude Desktop, Cursor, Cline, etc.
+`ask` endpoint as a tool — ask anything about a YouTube video (or get a summary)
+straight from an MCP-capable agent like Claude Desktop, Cursor, or Cline.
 
 Each call is paid in **USDC on Solana** (dynamic price, scales with
 `maxOutputTokens`), settled automatically via the [x402](https://x402.org)
-protocol.
+protocol. You bring your own wallet; you pay only for what you call.
 
-Published on npm: [`recapfy-mcp`](https://www.npmjs.com/package/recapfy-mcp).
+📦 npm: [`recapfy-mcp`](https://www.npmjs.com/package/recapfy-mcp)
 
-## Why a local MCP server (and why you bring your own wallet)
+## Why a local server, and why you bring your own wallet
 
-"MCP server" is a protocol role, not a hosted service. This is a **local stdio
-server**: each user runs their own copy and configures it with their **own
+"MCP server" is a protocol role, not a hosted service. This runs as a **local
+stdio server**: each user launches their own copy, configured with their **own
 Solana wallet**, so every caller pays with their own funds. That's the only model
-that makes per-agent payment work — a single shared hosted server can't hold
-everyone's wallet. It's published to npm so an agent host can add it in one step,
-and it hides the whole x402 dance (402 → sign → retry) behind a single tool call.
+that makes per-agent payment work — a single shared server can't hold everyone's
+wallet. It hides the whole x402 dance (`402 → sign → retry`) behind one tool call.
 
-## Tool
+## Prerequisites
 
-### `ask`
+- **Node.js ≥ 20.**
+- A **Solana wallet funded with USDC on mainnet.** You do *not* need SOL for fees
+  — the API's facilitator sponsors the network fee.
+- That wallet's **secret key, base58-encoded** (the 64-byte form that Phantom's
+  "Export Private Key" gives you, or `solana-keygen`).
 
-| Input             | Type    | Required | Description                                                              |
-| ----------------- | ------- | -------- | ------------------------------------------------------------------------ |
-| `videoUrl`        | string  | yes      | Absolute http(s) URL of the YouTube video.                               |
-| `prompt`          | string  | yes      | What to ask (a question, or "summarize").                                |
-| `maxOutputTokens` | integer | no       | Max tokens in the answer (defaults to 1024). **Drives the dynamic price.** |
+> ⚠️ The key signs real payments. Use a dedicated low-balance wallet, never share
+> it, and never commit it.
 
-Returns the agent's answer as text. Payment is settled transparently before the
-answer is returned.
+## Install
 
-> The per-call price is **dynamic**: the API quotes the USDC amount in the 402
-> challenge based on `maxOutputTokens`. The configured wallet pays whatever is
-> quoted, so keep `maxOutputTokens` sensible.
-
-## Configuration
-
-Set via environment variables (see [`.env.example`](./.env.example)):
-
-| Variable                     | Required | Description                                                                 |
-| ---------------------------- | -------- | --------------------------------------------------------------------------- |
-| `RECAPFY_API_BASE_URL`       | yes      | Base URL of the Recapfy API, no trailing slash.                             |
-| `SVM_PRIVATE_KEY`            | yes      | Base58-encoded Solana **secret key**. Pays 0.01 USDC per call. Keep funded. |
-| `RECAPFY_ALLOW_INSECURE_TLS` | no       | Set to `1` to accept self-signed TLS (local dev over https only).           |
-
-## Install & build
-
-```bash
-npm install
-npm run build
-```
-
-## Install (Claude Desktop, Cursor, Cline, …)
-
-No clone or build needed — add this to your MCP config (Claude Desktop:
+No clone or build needed. Add this to your MCP client config (Claude Desktop:
 `claude_desktop_config.json`) and restart the client:
 
 ```jsonc
@@ -73,15 +49,82 @@ No clone or build needed — add this to your MCP config (Claude Desktop:
 }
 ```
 
-<details>
-<summary>Run from a local checkout instead (development)</summary>
+## Configuration
+
+| Variable                     | Required | Description                                                       |
+| ---------------------------- | -------- | ----------------------------------------------------------------- |
+| `RECAPFY_API_BASE_URL`       | yes      | Base URL of the Recapfy API, no trailing slash.                   |
+| `SVM_PRIVATE_KEY`            | yes      | Base58-encoded Solana secret key. Pays per call. Keep it funded.  |
+| `RECAPFY_ALLOW_INSECURE_TLS` | no       | Set to `1` to accept self-signed TLS (local dev over https only). |
+
+## Tool: `ask`
+
+| Input             | Type    | Required | Description                                                                 |
+| ----------------- | ------- | -------- | --------------------------------------------------------------------------- |
+| `videoUrl`        | string  | yes      | Absolute http(s) URL of the YouTube video.                                  |
+| `prompt`          | string  | yes      | What to ask (a question, or "summarize").                                   |
+| `maxOutputTokens` | integer | no       | Max tokens in the answer (default 1024). **Drives the dynamic price.**       |
+
+Returns the agent's answer as text. Payment is settled before the answer returns.
+The per-call price is **dynamic**: the API quotes the USDC amount in the `402`
+challenge based on `maxOutputTokens`, and your wallet pays whatever is quoted — so
+keep `maxOutputTokens` sensible.
+
+## How payment works
+
+Built on the official Coinbase x402 **v2** client packages (`@x402/fetch`,
+`@x402/svm`, `@x402/core`) plus `@solana/kit` for signing:
+
+1. The tool POSTs to `${RECAPFY_API_BASE_URL}/api/v1/agents/ask`.
+2. The API replies `402` with requirements in the `PAYMENT-REQUIRED` header
+   (`exact` SVM scheme, USDC, dynamic amount, and a facilitator `feePayer` that
+   sponsors the network fee).
+3. The wrapped fetch signs a gasless SPL-token transfer with your wallet and
+   retries with the `PAYMENT-SIGNATURE` header.
+4. The API verifies, settles, and returns the answer plus a `PAYMENT-RESPONSE`
+   settlement header.
+
+## Verify it works
+
+Inspect the tool without spending anything using the MCP Inspector (it only signs
+a payment when you actually invoke `ask`, so any key is fine just to browse):
+
+```bash
+RECAPFY_API_BASE_URL=https://api.recapfy.ai SVM_PRIVATE_KEY=<key> \
+  npx @modelcontextprotocol/inspector npx -y recapfy-mcp
+```
+
+Open the printed URL → **Tools → ask**. Invoking it with a funded wallet performs
+a real paid call; verify the spend on a Solana explorer.
+
+## Troubleshooting
+
+| Symptom                                          | Cause / fix                                                          |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| `Missing required environment variable ...`      | `RECAPFY_API_BASE_URL` or `SVM_PRIVATE_KEY` not set.                |
+| `SVM_PRIVATE_KEY is not valid base58`            | Needs base58 of the 64-byte secret key.                             |
+| `400 ... maxOutputTokens must be greater than 0` | Pass a positive `maxOutputTokens` (the tool defaults to 1024).      |
+| `400 ... prompt`                                 | `prompt` is required and non-empty.                                 |
+| 402 loop / "Failed to create payment payload"    | Wallet has no USDC on mainnet, or wrong network. Fund it.           |
+| TLS error against a local API over https         | Set `RECAPFY_ALLOW_INSECURE_TLS=1` (localhost dev only).            |
+
+## Development
+
+```bash
+git clone https://github.com/pedrot95dev/recapfy.mcp.git
+cd recapfy.mcp
+npm install
+npm run build      # outputs dist/
+```
+
+Run a local checkout from your MCP client by pointing at the build:
 
 ```jsonc
 {
   "mcpServers": {
     "recapfy": {
       "command": "node",
-      "args": ["C:/Developer/Repositories/Recapfy/recapfy.mcp/dist/index.js"],
+      "args": ["/absolute/path/to/recapfy.mcp/dist/index.js"],
       "env": {
         "RECAPFY_API_BASE_URL": "https://api.recapfy.ai",
         "SVM_PRIVATE_KEY": "<your base58 Solana secret key>"
@@ -91,37 +134,10 @@ No clone or build needed — add this to your MCP config (Claude Desktop:
 }
 ```
 
-Requires `npm install && npm run build` first.
+Releases are automated: publishing a GitHub Release runs
+[`.github/workflows/release.yml`](./.github/workflows/release.yml), which
+publishes to npm via OIDC trusted publishing (with provenance, no token).
 
-</details>
+## License
 
-## How payment works
-
-Built on the official Coinbase x402 **v2** client packages
-(`@x402/fetch`, `@x402/svm`, `@x402/core`) plus `@solana/kit` for signing. The
-deployed API is a proper x402 v2 server, so the off-the-shelf client is wire
-compatible — confirmed against the live endpoint and `.well-known/x402` manifest:
-
-1. The tool POSTs to `${RECAPFY_API_BASE_URL}/api/v1/agents/ask`.
-2. The API replies `402` with the requirements in the **`PAYMENT-REQUIRED`**
-   header (`exact` SVM scheme, USDC, dynamic `amount`, and a facilitator
-   `feePayer` that sponsors the network fee).
-3. The wrapped fetch builds and signs a gasless SPL-token transfer with your
-   wallet and retries with the **`PAYMENT-SIGNATURE`** header (x402 v2).
-4. The API verifies, settles, and returns the answer plus a **`PAYMENT-RESPONSE`**
-   settlement header.
-
-Verified against the live API (`api.recapfy.ai`):
-
-- `x402Version: 2`, network `solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp` (mainnet),
-  asset USDC, amount `dynamic` (quoted per request from `maxOutputTokens`).
-- Field name is `amount` — correct for x402 **v2** (v1 used `maxAmountRequired`);
-  `@x402/core` parses both, keyed off `x402Version`.
-
-## Status
-
-- ✅ MCP server boots over stdio and advertises the `ask` tool (with
-  `maxOutputTokens`).
-- ✅ Wire format verified compatible with the live x402 v2 endpoint.
-- ⏳ A real *paid* call still needs a funded mainnet USDC wallet; not yet
-  exercised end-to-end from here.
+MIT
